@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap JS and jQuery (required for Bootstrap and AJAX) -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Product List</h2>
+        <button id="btnFetch" class="btn btn-primary mb-3">Fetch Products</button>
+        <table class="table" id="productTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                <!-- Table rows will be dynamically populated here -->
+            </tbody>
+        </table>
+
+        <h2>Add New Product</h2>
+        <form id="addProductForm" class="mb-3">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" class="form-control" id="title" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <input type="text" class="form-control" id="description" required>
+            </div>
+            <div class="form-group">
+                <label for="price">Price:</label>
+                <input type="number" class="form-control" id="price" required>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <input type="text" class="form-control" id="category" required>
+            </div>
+            <button type="submit" class="btn btn-success">Add Product</button>
+        </form>
+    </div>
+
+
+    <script>
+        $(document).ready(function() {
+            const baseUrl = "https://dummyjson.com/products";
+            const productTableBody = $('#productTableBody');
+            const addProductForm = $('#addProductForm');
+
+            // Fetch products on button click
+            $('#btnFetch').click(fetchProducts);
+
+            function fetchProducts() {
+                $.get(baseUrl)
+                    .done(function(products) {
+                        displayProducts(products.products);
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error('Request failed:', textStatus, errorThrown);
+                    });
+            }
+
+            function displayProducts(products) {
+                productTableBody.empty(); // Clear existing rows
+                
+                products.forEach(function(product) {
+                    const rowHtml = `<tr>
+                        <td>${product.id}</td>
+                        <td>${product.title}</td>
+                        <td>${product.description}</td>
+                        <td>$${product.price}</td>
+                        <td>${product.category}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="editProduct(${product.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">Delete</button>
+                        </td>
+                    </tr>`;
+                    productTableBody.append(rowHtml);
+                });
+            }
+
+            // Add new product
+            addProductForm.submit(function(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                const title = $('#title').val();
+                const description = $('#description').val();
+                const price = parseFloat($('#price').val());
+                const category = $('#category').val();
+
+                $.post(baseUrl + '/add', {
+                    title: title,
+                    description: description,
+                    price: price,
+                    category: category
+                })
+                .done(function() {
+                    fetchProducts(); // Refresh product list after adding
+                    addProductForm[0].reset(); // Reset form fields
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('Add product request failed:', textStatus, errorThrown);
+                });
+            });
+
+            // Delete product
+            function deleteProduct(productId) {
+                if (confirm("Are you sure you want to delete this product?")) {
+                    $.ajax({
+                        url: `${baseUrl}/${productId}`,
+                        type: 'DELETE',
+                        success: function() {
+                            fetchProducts(); // Refresh product list after deletion
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.error('Delete product request failed:', textStatus, errorThrown);
+                        }
+                    });
+                }
+            }
+
+            // Placeholder for edit product (not implemented)
+            function editProduct(productId) {
+                console.log(`Editing product with ID: ${productId}`);
+                // Implement edit functionality here (e.g., fetch product details, show edit form)
+                // Example: Redirect to an edit page or show a modal for editing
+            }
+        });
+    </script>
+</body>
+</html>
